@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camera Sensor Test | auto-mat-ion</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface-2: #252540;
+      --primary: #00d4aa;
+      --secondary: #7c3aed;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--surface-2);
+      margin-bottom: 24px;
+    }
+
+    .back-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 1.5rem;
+    }
+
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.25rem; margin-bottom: 16px; color: var(--primary); }
+    h3 { font-size: 0.875rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .video-container {
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #ami-preview {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      background: #000;
+      display: block;
+    }
+
+    .video-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .video-stats {
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: var(--primary);
+    }
+
+    .recording-indicator {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 12px;
+      height: 12px;
+      background: var(--error);
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+      display: none;
+    }
+
+    .recording-indicator.active { display: block; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    select, input[type="number"], button {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--surface-2);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    select:hover, input:hover, button:hover { border-color: var(--primary); }
+
+    input[type="number"] { font-family: monospace; }
+
+    button.primary {
+      background: var(--primary);
+      color: var(--bg);
+      font-weight: 600;
+      border: none;
+    }
+
+    button.primary:hover { background: #00b894; }
+
+    button.secondary {
+      background: var(--secondary);
+      color: white;
+      border: none;
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .button-row button { flex: 1; }
+
+    .input-group {
+      margin-bottom: 12px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-row > * { flex: 1; }
+
+    /* Test Runner Panel */
+    .test-panel {
+      border: 2px solid var(--secondary);
+    }
+
+    .test-panel h2 {
+      color: var(--secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .test-badge {
+      background: var(--secondary);
+      color: white;
+      font-size: 0.6rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    #ami-test-output {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+    }
+
+    .test-result {
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+
+    .test-result.success { border-left: 3px solid var(--success); }
+    .test-result.error { border-left: 3px solid var(--error); }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .result-header .status {
+      font-size: 1rem;
+    }
+
+    .capture-result {
+      display: inline-block;
+      margin: 4px;
+      text-align: center;
+    }
+
+    .capture-result img, .capture-result video {
+      border-radius: 4px;
+      border: 1px solid var(--surface-2);
+    }
+
+    .capture-result .meta {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    /* Log Panel */
+    #logOutput {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.7rem;
+      line-height: 1.5;
+    }
+
+    .log-entry { padding: 2px 0; }
+    .log-entry.info { color: var(--primary); }
+    .log-entry.success { color: var(--success); }
+    .log-entry.warning { color: var(--warning); }
+    .log-entry.error { color: var(--error); }
+
+    /* Capabilities */
+    .capability-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--surface-2);
+      font-size: 0.8rem;
+    }
+
+    .capability-item:last-child { border-bottom: none; }
+    .capability-name { color: var(--text-dim); }
+    .capability-value { font-family: monospace; color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="../index.html" class="back-link">←</a>
+      <h1>📷 Camera Sensor Test</h1>
+    </header>
+
+    <div class="main-grid">
+      <!-- Left: Video Preview -->
+      <div>
+        <div class="video-container">
+          <video id="ami-preview" autoplay playsinline muted></video>
+          <div class="recording-indicator" id="recordingIndicator"></div>
+          <div class="video-overlay">
+            <div class="video-stats" id="videoStats">No stream</div>
+            <div class="video-stats" id="fpsCounter">0 FPS</div>
+          </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="panel test-panel" style="margin-top: 16px;">
+          <h2>🧪 Test Results <span class="test-badge">TestRunner</span></h2>
+          <div id="ami-test-output">
+            <div style="color: var(--text-dim); font-style: italic;">
+              Test results will appear here. Use the controls or run automated tests.
+            </div>
+          </div>
+        </div>
+
+        <!-- Event Log -->
+        <div class="panel" style="margin-top: 16px;">
+          <h3>📝 Event Log</h3>
+          <div id="logOutput"></div>
+        </div>
+      </div>
+
+      <!-- Right: Controls Sidebar -->
+      <div class="sidebar">
+        <!-- Camera Selection -->
+        <div class="panel">
+          <h3>Camera Selection</h3>
+          <div class="input-group">
+            <label>Device</label>
+            <select id="ami-camera-select">
+              <option value="all">All Cameras</option>
+              <option value="front">Front Camera</option>
+              <option value="back">Back Camera</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button id="startBtn" class="primary">▶ Start</button>
+            <button id="stopBtn" disabled>■ Stop</button>
+          </div>
+        </div>
+
+        <!-- Test Configuration (TestRunner standard IDs) -->
+        <div class="panel test-panel">
+          <h3>🎯 Test Configuration</h3>
+
+          <div class="input-group">
+            <label>Action</label>
+            <select id="ami-action">
+              <option value="capture">📸 Capture Image</option>
+              <option value="record">🎬 Record Video</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label>Resolution</label>
+            <select id="ami-resolution">
+              <option value="max">Maximum</option>
+              <option value="min">Minimum</option>
+              <option value="custom">Custom...</option>
+            </select>
+          </div>
+
+          <div class="input-row" id="customResolution" style="display: none;">
+            <div class="input-group">
+              <label>Width</label>
+              <input type="number" id="ami-width" value="1920" min="320" max="4096">
+            </div>
+            <div class="input-group">
+              <label>Height</label>
+              <input type="number" id="ami-height" value="1080" min="240" max="2160">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Duration (seconds, for video)</label>
+            <input type="number" id="ami-duration" value="5" min="1" max="60">
+          </div>
+
+          <div class="input-group">
+            <label>Format</label>
+            <select id="ami-format">
+              <option value="png">PNG</option>
+              <option value="jpeg">JPEG</option>
+              <option value="webp">WebP</option>
+            </select>
+          </div>
+
+          <div class="button-row">
+            <button id="ami-capture-btn" class="primary">📸 Capture</button>
+            <button id="ami-record-btn" class="secondary">🎬 Record</button>
+          </div>
+
+          <div class="button-row">
+            <button id="ami-run-test-btn" style="background: var(--secondary); color: white; border: none;">
+              ⚡ Run Loaded Test
+            </button>
+          </div>
+        </div>
+
+        <!-- Manual Controls -->
+        <div class="panel">
+          <h3>Manual Controls</h3>
+          <div class="button-row">
+            <button id="torchBtn" disabled>🔦 Torch</button>
+            <button id="switchBtn" disabled>🔄 Switch</button>
+          </div>
+          <div class="button-row">
+            <button id="refreshBtn">📋 Refresh Devices</button>
+          </div>
+        </div>
+
+        <!-- Capabilities -->
+        <div class="panel" id="capabilitiesPanel" style="display: none;">
+          <h3>📋 Track Capabilities</h3>
+          <div id="capabilitiesList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Client (must load before TestRunner for auto-upload) -->
+  <script>console.log('[PAGE] Loading results-client.js...');</script>
+  <script src="/lib/results-client.js"></script>
+  <script>console.log('[PAGE] results-client.js loaded, ResultsClient:', typeof ResultsClient);</script>
+
+  <!-- TestRunner Bridge -->
+  <script>console.log('[PAGE] Loading test-runner.js...');</script>
+  <script src="/lib/test-runner.js"></script>
+  <script>console.log('[PAGE] test-runner.js loaded, TestRunner:', typeof TestRunner);</script>
+
+  <script>
+    // ========================================================================
+    // State
+    // ========================================================================
+    let currentStream = null;
+    let frameCount = 0;
+    let lastFrameTime = 0;
+
+    const video = document.getElementById('ami-preview');
+    const logOutput = document.getElementById('logOutput');
+
+    // ========================================================================
+    // Logging
+    // ========================================================================
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toISOString().substr(11, 12)}] ${message}`;
+      logOutput.appendChild(entry);
+      logOutput.scrollTop = logOutput.scrollHeight;
+
+      // Send to automation framework if available
+      if (window.automationLog) {
+        window.automationLog({ message, type, timestamp: Date.now() });
+      }
+    }
+
+    // ========================================================================
+    // Device Enumeration
+    // ========================================================================
+    async function enumerateDevices() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(d => d.kind === 'videoinput');
+
+        const select = document.getElementById('ami-camera-select');
+
+        // Keep standard options
+        select.innerHTML = `
+          <option value="all">All Cameras (${cameras.length})</option>
+          <option value="front">Front Camera</option>
+          <option value="back">Back Camera</option>
+        `;
+
+        // Add specific devices
+        cameras.forEach((device, i) => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.textContent = device.label || `Camera ${i + 1}`;
+          select.appendChild(option);
+        });
+
+        log(`Found ${cameras.length} camera(s)`, 'success');
+        return cameras;
+      } catch (err) {
+        log(`Enumeration failed: ${err.message}`, 'error');
+        return [];
+      }
+    }
+
+    // ========================================================================
+    // Get Constraints from UI
+    // ========================================================================
+    function getConstraints() {
+      const cameraSelect = document.getElementById('ami-camera-select').value;
+      const resolution = document.getElementById('ami-resolution').value;
+
+      const constraints = { video: {} };
+
+      // Camera selection
+      if (cameraSelect === 'front') {
+        constraints.video.facingMode = { ideal: 'user' };
+      } else if (cameraSelect === 'back') {
+        constraints.video.facingMode = { ideal: 'environment' };
+      } else if (cameraSelect !== 'all') {
+        constraints.video.deviceId = { exact: cameraSelect };
+      }
+
+      // Resolution
+      if (resolution === 'max') {
+        constraints.video.width = { ideal: 4096 };
+        constraints.video.height = { ideal: 2160 };
+      } else if (resolution === 'min') {
+        constraints.video.width = { ideal: 320 };
+        constraints.video.height = { ideal: 240 };
+      } else if (resolution === 'custom') {
+        const w = parseInt(document.getElementById('ami-width').value) || 1920;
+        const h = parseInt(document.getElementById('ami-height').value) || 1080;
+        constraints.video.width = { ideal: w };
+        constraints.video.height = { ideal: h };
+      }
+
+      return constraints;
+    }
+
+    // ========================================================================
+    // Start Camera
+    // ========================================================================
+    async function startCamera() {
+      try {
+        if (currentStream) {
+          stopCamera();
+        }
+
+        const constraints = getConstraints();
+        log(`Requesting: ${JSON.stringify(constraints.video)}`, 'info');
+
+        currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = currentStream;
+
+        // Update UI
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        document.getElementById('switchBtn').disabled = false;
+
+        // Get actual settings
+        const track = currentStream.getVideoTracks()[0];
+        const settings = track.getSettings();
+
+        log(`Stream started: ${settings.width}×${settings.height}`, 'success');
+        updateVideoStats(settings);
+        showCapabilities(track);
+
+        // Check torch support
+        const caps = track.getCapabilities?.();
+        if (caps?.torch) {
+          document.getElementById('torchBtn').disabled = false;
+        }
+
+        startFpsCounter();
+        await enumerateDevices();
+
+      } catch (err) {
+        log(`Failed to start: ${err.message}`, 'error');
+      }
+    }
+
+    // ========================================================================
+    // Stop Camera
+    // ========================================================================
+    function stopCamera() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+        video.srcObject = null;
+
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+        document.getElementById('switchBtn').disabled = true;
+        document.getElementById('torchBtn').disabled = true;
+
+        document.getElementById('videoStats').textContent = 'No stream';
+        document.getElementById('capabilitiesPanel').style.display = 'none';
+
+        log('Camera stopped', 'warning');
+      }
+    }
+
+    // ========================================================================
+    // Switch Camera
+    // ========================================================================
+    async function switchCamera() {
+      const select = document.getElementById('ami-camera-select');
+      if (select.value === 'front' || select.value === 'user') {
+        select.value = 'back';
+      } else {
+        select.value = 'front';
+      }
+      await startCamera();
+    }
+
+    // ========================================================================
+    // Torch Control
+    // ========================================================================
+    async function toggleTorch() {
+      if (!currentStream) return;
+
+      const track = currentStream.getVideoTracks()[0];
+      const caps = track.getCapabilities?.();
+
+      if (caps?.torch) {
+        const settings = track.getSettings();
+        const newTorch = !settings.torch;
+
+        await track.applyConstraints({ advanced: [{ torch: newTorch }] });
+        log(`Torch: ${newTorch ? 'ON' : 'OFF'}`, 'info');
+      }
+    }
+
+    // ========================================================================
+    // Show Capabilities
+    // ========================================================================
+    function showCapabilities(track) {
+      const caps = track.getCapabilities?.() || {};
+      const settings = track.getSettings();
+      const panel = document.getElementById('capabilitiesPanel');
+      const list = document.getElementById('capabilitiesList');
+
+      list.innerHTML = '';
+
+      const items = [
+        ['Resolution', `${settings.width}×${settings.height}`],
+        ['Frame Rate', `${settings.frameRate?.toFixed(1)} fps`],
+        ['Facing', settings.facingMode || 'N/A'],
+        ['Width Range', caps.width ? `${caps.width.min}–${caps.width.max}` : 'N/A'],
+        ['Height Range', caps.height ? `${caps.height.min}–${caps.height.max}` : 'N/A'],
+        ['Torch', caps.torch ? '✓ Supported' : '✗'],
+      ];
+
+      items.forEach(([name, value]) => {
+        const div = document.createElement('div');
+        div.className = 'capability-item';
+        div.innerHTML = `<span class="capability-name">${name}</span><span class="capability-value">${value}</span>`;
+        list.appendChild(div);
+      });
+
+      panel.style.display = 'block';
+    }
+
+    // ========================================================================
+    // Video Stats & FPS Counter
+    // ========================================================================
+    function updateVideoStats(settings) {
+      document.getElementById('videoStats').textContent =
+        `${settings.width}×${settings.height} · ${settings.facingMode || 'camera'}`;
+    }
+
+    function startFpsCounter() {
+      frameCount = 0;
+      lastFrameTime = performance.now();
+
+      function countFrame() {
+        if (!currentStream) return;
+
+        frameCount++;
+        const now = performance.now();
+        const elapsed = now - lastFrameTime;
+
+        if (elapsed >= 1000) {
+          const fps = (frameCount / elapsed) * 1000;
+          document.getElementById('fpsCounter').textContent = `${fps.toFixed(1)} FPS`;
+          frameCount = 0;
+          lastFrameTime = now;
+        }
+
+        requestAnimationFrame(countFrame);
+      }
+
+      requestAnimationFrame(countFrame);
+    }
+
+    // ========================================================================
+    // UI Helpers
+    // ========================================================================
+    document.getElementById('ami-resolution').addEventListener('change', function() {
+      document.getElementById('customResolution').style.display =
+        this.value === 'custom' ? 'flex' : 'none';
+    });
+
+    // ========================================================================
+    // Event Listeners
+    // ========================================================================
+    document.getElementById('startBtn').addEventListener('click', startCamera);
+    document.getElementById('stopBtn').addEventListener('click', stopCamera);
+    document.getElementById('switchBtn').addEventListener('click', switchCamera);
+    document.getElementById('torchBtn').addEventListener('click', toggleTorch);
+    document.getElementById('refreshBtn').addEventListener('click', enumerateDevices);
+
+    // Device change listener
+    navigator.mediaDevices.addEventListener('devicechange', () => {
+      log('Device change detected', 'warning');
+      enumerateDevices();
+    });
+
+    // ========================================================================
+    // Automation API (for external scripts)
+    // ========================================================================
+    window.CameraTest = {
+      start: startCamera,
+      stop: stopCamera,
+      switch: switchCamera,
+      toggleTorch,
+      getStream: () => currentStream,
+      getSettings: () => currentStream?.getVideoTracks()[0]?.getSettings(),
+      getCapabilities: () => currentStream?.getVideoTracks()[0]?.getCapabilities?.(),
+      setConfig: (config) => {
+        if (config.camera) document.getElementById('ami-camera-select').value = config.camera;
+        if (config.resolution) document.getElementById('ami-resolution').value = config.resolution;
+        if (config.duration) document.getElementById('ami-duration').value = config.duration;
+        if (config.format) document.getElementById('ami-format').value = config.format;
+        if (config.action) document.getElementById('ami-action').value = config.action;
+      },
+      log: log,
+    };
+
+    // ========================================================================
+    // TestRunner Integration
+    // ========================================================================
+    if (window.TestRunner) {
+      // Enhance TestRunner with camera-specific logging
+      TestRunner.on('progress', (data) => {
+        if (data.stage === 'starting') {
+          log(`Test starting with config: ${JSON.stringify(data.config)}`, 'info');
+        } else if (data.stage === 'completed') {
+          log('Test completed', 'success');
+        }
+      });
+
+      TestRunner.on('error', (data) => {
+        log(`Test error: ${data.error}`, 'error');
+      });
+
+      log('[TestRunner] Connected and ready', 'success');
+    }
+
+    // ========================================================================
+    // Init
+    // ========================================================================
+    enumerateDevices();
+    log('Camera test page ready', 'success');
+  </script>
+</body>
+</html>

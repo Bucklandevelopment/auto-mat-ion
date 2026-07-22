@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orientation Test | auto-mat-ion</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface-2: #252540;
+      --primary: #00d4aa;
+      --secondary: #7c3aed;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .back-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 1.5rem;
+    }
+    h1 { font-size: 1.5rem; }
+    .status {
+      margin-left: auto;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+    }
+    .status.active { background: var(--success); color: #000; }
+    .status.inactive { background: var(--surface-2); color: var(--text-dim); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 1rem;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    /* 3D Compass */
+    .compass-container {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 20px auto;
+    }
+    .compass {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: conic-gradient(
+        from 0deg,
+        #ef4444 0deg 45deg,
+        var(--surface-2) 45deg 135deg,
+        #22c55e 135deg 225deg,
+        var(--surface-2) 225deg 315deg,
+        #ef4444 315deg 360deg
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s;
+    }
+    .compass-inner {
+      width: 80%;
+      height: 80%;
+      border-radius: 50%;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .compass-needle {
+      width: 4px;
+      height: 60%;
+      background: linear-gradient(to top, var(--primary) 50%, var(--error) 50%);
+      border-radius: 2px;
+      transform-origin: center bottom;
+    }
+    .compass-directions {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+    .compass-directions span {
+      position: absolute;
+      font-weight: bold;
+      font-size: 0.875rem;
+    }
+    .compass-directions .n { top: 5px; left: 50%; transform: translateX(-50%); color: var(--error); }
+    .compass-directions .s { bottom: 5px; left: 50%; transform: translateX(-50%); color: var(--success); }
+    .compass-directions .e { right: 5px; top: 50%; transform: translateY(-50%); }
+    .compass-directions .w { left: 5px; top: 50%; transform: translateY(-50%); }
+
+    /* 3D Device Visualization */
+    .device-3d-container {
+      perspective: 600px;
+      width: 200px;
+      height: 300px;
+      margin: 20px auto;
+    }
+    .device-3d {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.1s;
+    }
+    .device-face {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      border: 2px solid var(--primary);
+      background: rgba(0, 212, 170, 0.1);
+    }
+    .device-face.front {
+      width: 100px;
+      height: 150px;
+      left: 50px;
+      top: 75px;
+      transform: translateZ(25px);
+      background: var(--surface);
+    }
+    .device-face.back {
+      width: 100px;
+      height: 150px;
+      left: 50px;
+      top: 75px;
+      transform: translateZ(-25px) rotateY(180deg);
+    }
+    .device-face.left {
+      width: 50px;
+      height: 150px;
+      left: 0;
+      top: 75px;
+      transform: rotateY(-90deg) translateZ(50px);
+    }
+    .device-face.right {
+      width: 50px;
+      height: 150px;
+      right: 0;
+      top: 75px;
+      transform: rotateY(90deg) translateZ(50px);
+    }
+    .device-face.top {
+      width: 100px;
+      height: 50px;
+      left: 50px;
+      top: 0;
+      transform: rotateX(90deg) translateZ(75px);
+    }
+    .device-face.bottom {
+      width: 100px;
+      height: 50px;
+      left: 50px;
+      bottom: 0;
+      transform: rotateX(-90deg) translateZ(75px);
+    }
+    .device-screen {
+      width: 80%;
+      height: 85%;
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    /* Values Display */
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .value-box {
+      background: var(--surface-2);
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .value-box .label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+    .value-box .value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      font-family: monospace;
+    }
+    .value-box .unit {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    /* Horizon Indicator */
+    .horizon-container {
+      width: 200px;
+      height: 200px;
+      margin: 20px auto;
+      border-radius: 50%;
+      background: var(--surface-2);
+      overflow: hidden;
+      position: relative;
+    }
+    .horizon {
+      width: 300px;
+      height: 300px;
+      position: absolute;
+      left: -50px;
+      top: -50px;
+      background: linear-gradient(to bottom, #3b82f6 50%, #854d0e 50%);
+      transition: transform 0.1s;
+    }
+    .horizon-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: white;
+      top: 50%;
+    }
+    .horizon-center {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: var(--primary);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+    .horizon-wings {
+      position: absolute;
+      width: 80px;
+      height: 4px;
+      background: var(--warning);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+    .horizon-wings::before,
+    .horizon-wings::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 4px;
+      background: var(--warning);
+    }
+    .horizon-wings::before { left: -15px; transform: rotate(-45deg); }
+    .horizon-wings::after { right: -15px; transform: rotate(45deg); }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button.primary {
+      background: var(--primary);
+      color: var(--bg);
+    }
+    button.secondary {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .info-text {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="../index.html" class="back-link">←</a>
+    <h1>🧭 Device Orientation</h1>
+    <span class="status inactive" id="status">Inactive</span>
+  </header>
+
+  <div class="grid">
+    <!-- Values -->
+    <div class="card">
+      <h3>Orientation Values</h3>
+      <div class="values-grid">
+        <div class="value-box">
+          <div class="label">Alpha (Z)</div>
+          <div class="value" id="alpha">--</div>
+          <div class="unit">degrees</div>
+        </div>
+        <div class="value-box">
+          <div class="label">Beta (X)</div>
+          <div class="value" id="beta">--</div>
+          <div class="unit">degrees</div>
+        </div>
+        <div class="value-box">
+          <div class="label">Gamma (Y)</div>
+          <div class="value" id="gamma">--</div>
+          <div class="unit">degrees</div>
+        </div>
+      </div>
+      <div class="info-text" id="absoluteInfo">Waiting for sensor...</div>
+      <div class="controls" style="margin-top: 16px;">
+        <button class="primary" id="startBtn" onclick="startOrientation()">Start</button>
+        <button class="secondary" id="stopBtn" onclick="stopOrientation()" disabled>Stop</button>
+        <button class="secondary" onclick="calibrate()">Calibrate</button>
+      </div>
+    </div>
+
+    <!-- Compass -->
+    <div class="card">
+      <h3>Compass (Alpha)</h3>
+      <div class="compass-container">
+        <div class="compass" id="compass">
+          <div class="compass-inner">
+            <div class="compass-needle" id="needle"></div>
+          </div>
+        </div>
+        <div class="compass-directions">
+          <span class="n">N</span>
+          <span class="s">S</span>
+          <span class="e">E</span>
+          <span class="w">W</span>
+        </div>
+      </div>
+      <div class="info-text" style="text-align: center;">
+        Heading: <span id="heading">--</span>°
+      </div>
+    </div>
+
+    <!-- 3D Device -->
+    <div class="card">
+      <h3>3D Device View</h3>
+      <div class="device-3d-container">
+        <div class="device-3d" id="device3d">
+          <div class="device-face front"><div class="device-screen"></div></div>
+          <div class="device-face back">Back</div>
+          <div class="device-face left">L</div>
+          <div class="device-face right">R</div>
+          <div class="device-face top">Top</div>
+          <div class="device-face bottom">Bot</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Artificial Horizon -->
+    <div class="card">
+      <h3>Artificial Horizon</h3>
+      <div class="horizon-container">
+        <div class="horizon" id="horizon"></div>
+        <div class="horizon-center"></div>
+        <div class="horizon-wings"></div>
+      </div>
+      <div class="info-text" style="text-align: center;">
+        Pitch: <span id="pitch">--</span>° | Roll: <span id="roll">--</span>°
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let orientationHandler = null;
+    let calibrationOffset = { alpha: 0, beta: 0, gamma: 0 };
+    let history = [];
+
+    async function requestPermission() {
+      // iOS 13+ requires permission request
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const response = await DeviceOrientationEvent.requestPermission();
+          return response === 'granted';
+        } catch (e) {
+          console.error('Permission denied:', e);
+          return false;
+        }
+      }
+      return true; // Permission not required on this platform
+    }
+
+    async function startOrientation() {
+      const hasPermission = await requestPermission();
+      if (!hasPermission) {
+        alert('Permission denied for orientation sensor');
+        return;
+      }
+
+      orientationHandler = (event) => {
+        const alpha = (event.alpha || 0) - calibrationOffset.alpha;
+        const beta = (event.beta || 0) - calibrationOffset.beta;
+        const gamma = (event.gamma || 0) - calibrationOffset.gamma;
+
+        updateDisplay(alpha, beta, gamma, event.absolute);
+        history.push({
+          timestamp: Date.now(),
+          alpha, beta, gamma,
+          absolute: event.absolute
+        });
+        if (history.length > 1000) history.shift();
+      };
+
+      window.addEventListener('deviceorientation', orientationHandler, true);
+
+      document.getElementById('status').className = 'status active';
+      document.getElementById('status').textContent = 'Active';
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+    }
+
+    function stopOrientation() {
+      if (orientationHandler) {
+        window.removeEventListener('deviceorientation', orientationHandler, true);
+        orientationHandler = null;
+      }
+
+      document.getElementById('status').className = 'status inactive';
+      document.getElementById('status').textContent = 'Inactive';
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+    }
+
+    function calibrate() {
+      if (history.length > 0) {
+        const last = history[history.length - 1];
+        calibrationOffset = {
+          alpha: last.alpha + calibrationOffset.alpha,
+          beta: last.beta + calibrationOffset.beta,
+          gamma: last.gamma + calibrationOffset.gamma
+        };
+        alert('Calibrated! Current position is now the reference.');
+      }
+    }
+
+    function updateDisplay(alpha, beta, gamma, absolute) {
+      // Update values
+      document.getElementById('alpha').textContent = alpha.toFixed(1);
+      document.getElementById('beta').textContent = beta.toFixed(1);
+      document.getElementById('gamma').textContent = gamma.toFixed(1);
+
+      // Update absolute info
+      document.getElementById('absoluteInfo').textContent =
+        absolute ? '✓ Compass-referenced (absolute)' : '⚠ Relative orientation only';
+
+      // Update heading
+      let heading = alpha;
+      if (heading < 0) heading += 360;
+      document.getElementById('heading').textContent = heading.toFixed(0);
+
+      // Update compass
+      document.getElementById('compass').style.transform = `rotate(${-alpha}deg)`;
+
+      // Update 3D device
+      document.getElementById('device3d').style.transform =
+        `rotateX(${beta}deg) rotateY(${gamma}deg) rotateZ(${-alpha}deg)`;
+
+      // Update horizon
+      document.getElementById('horizon').style.transform =
+        `rotate(${-gamma}deg) translateY(${beta}px)`;
+      document.getElementById('pitch').textContent = beta.toFixed(1);
+      document.getElementById('roll').textContent = gamma.toFixed(1);
+    }
+
+    // Test interface for automation
+    window.OrientationTest = {
+      start: startOrientation,
+      stop: stopOrientation,
+      calibrate,
+      getValues: () => {
+        if (history.length === 0) return null;
+        return history[history.length - 1];
+      },
+      getHistory: () => history,
+      isActive: () => orientationHandler !== null,
+    };
+  </script>
+</body>
+</html>

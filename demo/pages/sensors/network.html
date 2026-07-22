@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Info Test | auto-mat-ion</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface-2: #252540;
+      --primary: #00d4aa;
+      --secondary: #7c3aed;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .back-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 1.5rem;
+    }
+    h1 { font-size: 1.5rem; }
+    .status {
+      margin-left: auto;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+    }
+    .status.online { background: var(--success); color: #000; }
+    .status.offline { background: var(--error); color: #fff; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 1rem;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    /* Connection type visual */
+    .connection-visual {
+      text-align: center;
+      padding: 20px;
+    }
+    .connection-icon {
+      font-size: 4rem;
+      margin-bottom: 12px;
+    }
+    .connection-type {
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .effective-type {
+      color: var(--primary);
+      font-size: 1.25rem;
+      margin-top: 4px;
+    }
+
+    /* Speed gauge */
+    .gauge-container {
+      position: relative;
+      width: 200px;
+      height: 100px;
+      margin: 20px auto;
+    }
+    .gauge-bg {
+      position: absolute;
+      width: 200px;
+      height: 100px;
+      border-radius: 100px 100px 0 0;
+      background: conic-gradient(
+        from 180deg,
+        var(--error) 0deg 60deg,
+        var(--warning) 60deg 120deg,
+        var(--success) 120deg 180deg
+      );
+      overflow: hidden;
+    }
+    .gauge-mask {
+      position: absolute;
+      width: 140px;
+      height: 70px;
+      bottom: 0;
+      left: 30px;
+      background: var(--surface);
+      border-radius: 70px 70px 0 0;
+    }
+    .gauge-needle {
+      position: absolute;
+      width: 4px;
+      height: 60px;
+      background: var(--text);
+      bottom: 0;
+      left: 98px;
+      transform-origin: bottom center;
+      transition: transform 0.5s ease;
+      border-radius: 2px;
+    }
+    .gauge-center {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: var(--text);
+      border-radius: 50%;
+      bottom: -10px;
+      left: 90px;
+    }
+    .gauge-value {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .gauge-unit {
+      color: var(--text-dim);
+      font-size: 0.875rem;
+    }
+
+    /* Info list */
+    .info-list {
+      list-style: none;
+    }
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--surface-2);
+    }
+    .info-item:last-child {
+      border-bottom: none;
+    }
+    .info-label {
+      color: var(--text-dim);
+    }
+    .info-value {
+      font-family: monospace;
+      color: var(--primary);
+    }
+    .info-value.warning {
+      color: var(--warning);
+    }
+    .info-value.good {
+      color: var(--success);
+    }
+
+    /* History chart */
+    .chart-container {
+      height: 150px;
+      position: relative;
+      margin-top: 20px;
+    }
+    .chart {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+    }
+    .chart-bar {
+      flex: 1;
+      background: var(--primary);
+      min-width: 4px;
+      border-radius: 2px 2px 0 0;
+      transition: height 0.3s;
+    }
+    .chart-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    /* Data saver badge */
+    .data-saver {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      margin-top: 12px;
+    }
+    .data-saver.active {
+      background: var(--warning);
+      color: #000;
+    }
+    .data-saver.inactive {
+      background: var(--surface-2);
+      color: var(--text-dim);
+    }
+
+    button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      background: var(--primary);
+      color: var(--bg);
+      margin-top: 16px;
+    }
+
+    .not-supported {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="../index.html" class="back-link">←</a>
+    <h1>📶 Network Information</h1>
+    <span class="status" id="onlineStatus">Checking...</span>
+  </header>
+
+  <div class="grid">
+    <!-- Connection Type -->
+    <div class="card">
+      <h3>Connection Type</h3>
+      <div class="connection-visual">
+        <div class="connection-icon" id="connectionIcon">📶</div>
+        <div class="connection-type" id="connectionType">--</div>
+        <div class="effective-type" id="effectiveType">--</div>
+      </div>
+    </div>
+
+    <!-- Downlink Speed -->
+    <div class="card">
+      <h3>Downlink Speed</h3>
+      <div class="gauge-container">
+        <div class="gauge-bg"></div>
+        <div class="gauge-mask"></div>
+        <div class="gauge-needle" id="speedNeedle"></div>
+        <div class="gauge-center"></div>
+      </div>
+      <div class="gauge-value">
+        <span id="downlinkValue">--</span>
+        <span class="gauge-unit">Mbps</span>
+      </div>
+    </div>
+
+    <!-- Network Details -->
+    <div class="card">
+      <h3>Network Details</h3>
+      <ul class="info-list" id="networkDetails">
+        <li class="info-item">
+          <span class="info-label">Effective Type</span>
+          <span class="info-value" id="effType">--</span>
+        </li>
+        <li class="info-item">
+          <span class="info-label">Downlink</span>
+          <span class="info-value" id="downlink">--</span>
+        </li>
+        <li class="info-item">
+          <span class="info-label">RTT (Round Trip)</span>
+          <span class="info-value" id="rtt">--</span>
+        </li>
+        <li class="info-item">
+          <span class="info-label">Connection Type</span>
+          <span class="info-value" id="type">--</span>
+        </li>
+      </ul>
+      <div class="data-saver inactive" id="dataSaver">
+        <span>💾</span>
+        <span>Data Saver: <span id="dataSaverStatus">Unknown</span></span>
+      </div>
+    </div>
+
+    <!-- Speed History -->
+    <div class="card">
+      <h3>Speed History</h3>
+      <div class="chart-container">
+        <div class="chart" id="speedChart"></div>
+      </div>
+      <div class="chart-labels">
+        <span>60s ago</span>
+        <span>Now</span>
+      </div>
+      <button onclick="measureSpeed()">Measure Speed</button>
+    </div>
+
+    <!-- Online/Offline Events -->
+    <div class="card">
+      <h3>Connection Events</h3>
+      <ul class="info-list" id="eventLog">
+        <li class="info-item">
+          <span class="info-label">Waiting for events...</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Check API availability
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const isNetworkInfoSupported = !!connection;
+
+    // Speed history
+    let speedHistory = new Array(30).fill(0);
+
+    // Update online status
+    function updateOnlineStatus() {
+      const isOnline = navigator.onLine;
+      const statusEl = document.getElementById('onlineStatus');
+      statusEl.className = `status ${isOnline ? 'online' : 'offline'}`;
+      statusEl.textContent = isOnline ? 'Online' : 'Offline';
+    }
+
+    // Update connection info
+    function updateConnectionInfo() {
+      if (!isNetworkInfoSupported) {
+        document.getElementById('connectionType').textContent = 'API Not Supported';
+        return;
+      }
+
+      // Connection type icon
+      const icons = {
+        'wifi': '📶',
+        'cellular': '📱',
+        'ethernet': '🔌',
+        'bluetooth': '🔵',
+        'wimax': '📡',
+        'other': '🌐',
+        'none': '❌',
+        'unknown': '❓',
+      };
+
+      const type = connection.type || 'unknown';
+      const effectiveType = connection.effectiveType || 'unknown';
+      const downlink = connection.downlink || 0;
+      const rtt = connection.rtt || 0;
+      const saveData = connection.saveData || false;
+
+      // Update UI
+      document.getElementById('connectionIcon').textContent = icons[type] || icons.unknown;
+      document.getElementById('connectionType').textContent = type.toUpperCase();
+      document.getElementById('effectiveType').textContent = effectiveType.toUpperCase();
+
+      // Update details
+      document.getElementById('effType').textContent = effectiveType;
+      document.getElementById('downlink').textContent = `${downlink} Mbps`;
+      document.getElementById('rtt').textContent = `${rtt} ms`;
+      document.getElementById('type').textContent = type;
+
+      // Update gauge (max 100 Mbps for scale)
+      const gaugeAngle = Math.min(downlink / 100, 1) * 180 - 90;
+      document.getElementById('speedNeedle').style.transform = `rotate(${gaugeAngle}deg)`;
+      document.getElementById('downlinkValue').textContent = downlink.toFixed(1);
+
+      // Color code based on effective type
+      const effTypeEl = document.getElementById('effType');
+      if (effectiveType === '4g') {
+        effTypeEl.className = 'info-value good';
+      } else if (effectiveType === '3g') {
+        effTypeEl.className = 'info-value';
+      } else {
+        effTypeEl.className = 'info-value warning';
+      }
+
+      // Data saver
+      const dataSaverEl = document.getElementById('dataSaver');
+      dataSaverEl.className = `data-saver ${saveData ? 'active' : 'inactive'}`;
+      document.getElementById('dataSaverStatus').textContent = saveData ? 'Enabled' : 'Disabled';
+
+      // Add to history
+      speedHistory.push(downlink);
+      speedHistory.shift();
+      updateChart();
+    }
+
+    // Update speed chart
+    function updateChart() {
+      const chart = document.getElementById('speedChart');
+      const maxSpeed = Math.max(...speedHistory, 1);
+
+      chart.innerHTML = speedHistory.map(speed => {
+        const height = (speed / maxSpeed) * 100;
+        return `<div class="chart-bar" style="height: ${Math.max(height, 2)}%"></div>`;
+      }).join('');
+    }
+
+    // Log event
+    function logEvent(message, type = 'info') {
+      const log = document.getElementById('eventLog');
+      const time = new Date().toLocaleTimeString();
+
+      const item = document.createElement('li');
+      item.className = 'info-item';
+      item.innerHTML = `
+        <span class="info-label">[${time}]</span>
+        <span class="info-value ${type === 'error' ? 'warning' : ''}">${message}</span>
+      `;
+
+      log.insertBefore(item, log.firstChild);
+
+      // Limit entries
+      while (log.children.length > 10) {
+        log.removeChild(log.lastChild);
+      }
+    }
+
+    // Measure actual speed (basic test)
+    async function measureSpeed() {
+      logEvent('Starting speed test...');
+
+      try {
+        const testUrl = 'https://www.google.com/favicon.ico?' + Date.now();
+        const startTime = performance.now();
+
+        await fetch(testUrl, { mode: 'no-cors', cache: 'no-store' });
+
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+
+        logEvent(`Latency test: ${duration.toFixed(0)}ms`);
+
+        // Update if Network Info is available
+        if (isNetworkInfoSupported) {
+          updateConnectionInfo();
+        }
+
+      } catch (error) {
+        logEvent(`Speed test failed: ${error.message}`, 'error');
+      }
+    }
+
+    // Event listeners
+    window.addEventListener('online', () => {
+      updateOnlineStatus();
+      logEvent('Connection restored', 'success');
+    });
+
+    window.addEventListener('offline', () => {
+      updateOnlineStatus();
+      logEvent('Connection lost', 'error');
+    });
+
+    if (connection) {
+      connection.addEventListener('change', () => {
+        updateConnectionInfo();
+        logEvent(`Connection changed: ${connection.effectiveType}`);
+      });
+    }
+
+    // Initialize
+    updateOnlineStatus();
+    updateConnectionInfo();
+    updateChart();
+
+    // Update periodically
+    setInterval(() => {
+      if (isNetworkInfoSupported) {
+        updateConnectionInfo();
+      }
+    }, 2000);
+
+    // Test interface
+    window.NetworkTest = {
+      isSupported: () => isNetworkInfoSupported,
+      isOnline: () => navigator.onLine,
+      getInfo: () => {
+        if (!connection) return null;
+        return {
+          type: connection.type,
+          effectiveType: connection.effectiveType,
+          downlink: connection.downlink,
+          rtt: connection.rtt,
+          saveData: connection.saveData,
+        };
+      },
+      getSpeedHistory: () => speedHistory,
+      measureSpeed,
+    };
+  </script>
+</body>
+</html>

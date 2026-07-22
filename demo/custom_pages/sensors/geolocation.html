@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geolocation Sensor Test | auto-mat-ion</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface-2: #252540;
+      --primary: #00d4aa;
+      --secondary: #7c3aed;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--surface-2);
+      margin-bottom: 24px;
+    }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 1.5rem; }
+    h1 { font-size: 1.75rem; }
+
+    .map-container {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    #map {
+      width: 100%;
+      height: 300px;
+      background: var(--surface-2);
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--text-dim);
+      position: relative;
+      overflow: hidden;
+    }
+    .map-pin {
+      position: absolute;
+      font-size: 2rem;
+      transform: translate(-50%, -100%);
+      transition: all 0.3s;
+    }
+    .map-coords {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    .readings {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .reading-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .reading-icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .reading-value {
+      font-size: 1.5rem;
+      font-family: monospace;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .reading-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .control-group {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .control-group h3 {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    select, button {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--surface-2);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    button.primary { background: var(--primary); color: var(--bg); font-weight: 600; border: none; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .button-row { display: flex; gap: 12px; margin-top: 12px; }
+    .button-row button { flex: 1; }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .checkbox-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--primary);
+    }
+
+    .history-panel {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .history-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--surface-2);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    .log-panel { background: var(--surface); border-radius: 12px; padding: 20px; }
+    #logOutput {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.75rem;
+    }
+    .log-entry { padding: 2px 0; }
+    .log-entry.info { color: var(--primary); }
+    .log-entry.success { color: var(--success); }
+    .log-entry.warning { color: var(--warning); }
+    .log-entry.error { color: var(--error); }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      background: var(--text-dim);
+    }
+    .status-indicator.active { background: var(--success); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="../index.html" class="back-link">←</a>
+      <h1>📍 Geolocation Sensor Test</h1>
+    </header>
+
+    <div class="map-container">
+      <div id="map">
+        <span id="mapPlaceholder">Click "Get Position" to start</span>
+        <div class="map-pin" id="mapPin" style="display:none;">📍</div>
+        <div class="map-coords" id="mapCoords" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="readings">
+      <div class="reading-card">
+        <div class="reading-icon">🌐</div>
+        <div class="reading-value" id="latitude">--</div>
+        <div class="reading-label">Latitude</div>
+      </div>
+      <div class="reading-card">
+        <div class="reading-icon">🌐</div>
+        <div class="reading-value" id="longitude">--</div>
+        <div class="reading-label">Longitude</div>
+      </div>
+      <div class="reading-card">
+        <div class="reading-icon">🎯</div>
+        <div class="reading-value" id="accuracy">--</div>
+        <div class="reading-label">Accuracy (m)</div>
+      </div>
+      <div class="reading-card">
+        <div class="reading-icon">⛰️</div>
+        <div class="reading-value" id="altitude">--</div>
+        <div class="reading-label">Altitude (m)</div>
+      </div>
+      <div class="reading-card">
+        <div class="reading-icon">🧭</div>
+        <div class="reading-value" id="heading">--</div>
+        <div class="reading-label">Heading (°)</div>
+      </div>
+      <div class="reading-card">
+        <div class="reading-icon">🚀</div>
+        <div class="reading-value" id="speed">--</div>
+        <div class="reading-label">Speed (m/s)</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <h3>Position Control</h3>
+        <button id="getPositionBtn" class="primary">📍 Get Position</button>
+        <div class="button-row">
+          <button id="watchBtn">👁️ Watch</button>
+          <button id="stopWatchBtn" disabled>⏹️ Stop</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h3>Options</h3>
+        <div class="checkbox-row">
+          <input type="checkbox" id="highAccuracy" checked>
+          <label for="highAccuracy">High Accuracy (GPS)</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="enableCache">
+          <label for="enableCache">Allow Cached Position</label>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h3>Timeout</h3>
+        <select id="timeout">
+          <option value="5000">5 seconds</option>
+          <option value="10000" selected>10 seconds</option>
+          <option value="30000">30 seconds</option>
+          <option value="60000">60 seconds</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <h3>Export</h3>
+        <button id="exportBtn">📊 Export History</button>
+      </div>
+    </div>
+
+    <div class="history-panel">
+      <h3><span class="status-indicator" id="watchIndicator"></span>Position History</h3>
+      <div class="history-list" id="historyList">
+        <div class="history-item" style="color: var(--text-dim);">No positions recorded yet</div>
+      </div>
+    </div>
+
+    <div class="log-panel">
+      <h3>📝 Event Log</h3>
+      <div id="logOutput"></div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let watchId = null;
+    let positions = [];
+
+    const logOutput = document.getElementById('logOutput');
+
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toISOString().substr(11, 12)}] ${message}`;
+      logOutput.appendChild(entry);
+      logOutput.scrollTop = logOutput.scrollHeight;
+    }
+
+    // Check support
+    function checkSupport() {
+      if ('geolocation' in navigator) {
+        log('Geolocation API supported', 'success');
+        return true;
+      } else {
+        log('Geolocation API not supported', 'error');
+        return false;
+      }
+    }
+
+    // Get options
+    function getOptions() {
+      return {
+        enableHighAccuracy: document.getElementById('highAccuracy').checked,
+        timeout: parseInt(document.getElementById('timeout').value),
+        maximumAge: document.getElementById('enableCache').checked ? 60000 : 0
+      };
+    }
+
+    // Update display
+    function updateDisplay(position) {
+      const coords = position.coords;
+
+      document.getElementById('latitude').textContent = coords.latitude.toFixed(6);
+      document.getElementById('longitude').textContent = coords.longitude.toFixed(6);
+      document.getElementById('accuracy').textContent = coords.accuracy ? coords.accuracy.toFixed(1) : '--';
+      document.getElementById('altitude').textContent = coords.altitude ? coords.altitude.toFixed(1) : '--';
+      document.getElementById('heading').textContent = coords.heading ? coords.heading.toFixed(1) : '--';
+      document.getElementById('speed').textContent = coords.speed ? coords.speed.toFixed(2) : '--';
+
+      // Update map visualization
+      const map = document.getElementById('map');
+      const pin = document.getElementById('mapPin');
+      const coordsEl = document.getElementById('mapCoords');
+
+      document.getElementById('mapPlaceholder').style.display = 'none';
+      pin.style.display = 'block';
+      coordsEl.style.display = 'block';
+
+      // Simple visualization - map lat/lng to position
+      const x = ((coords.longitude + 180) / 360) * 100;
+      const y = ((90 - coords.latitude) / 180) * 100;
+      pin.style.left = `${x}%`;
+      pin.style.top = `${y}%`;
+
+      coordsEl.textContent = `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`;
+
+      // Add to history
+      positions.push({
+        timestamp: position.timestamp,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracy: coords.accuracy,
+        altitude: coords.altitude,
+        heading: coords.heading,
+        speed: coords.speed
+      });
+
+      updateHistory();
+    }
+
+    function updateHistory() {
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+
+      const recent = positions.slice(-10).reverse();
+      recent.forEach((pos, i) => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        const time = new Date(pos.timestamp).toLocaleTimeString();
+        item.innerHTML = `
+          <span>${time}</span>
+          <span>${pos.latitude.toFixed(4)}, ${pos.longitude.toFixed(4)}</span>
+          <span>±${pos.accuracy?.toFixed(0) || '?'}m</span>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // Get single position
+    function getPosition() {
+      if (!checkSupport()) return;
+
+      log('Requesting position...', 'info');
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          updateDisplay(position);
+          log(`Position acquired: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)} (±${position.coords.accuracy.toFixed(0)}m)`, 'success');
+        },
+        (error) => {
+          log(`Error: ${error.message}`, 'error');
+        },
+        getOptions()
+      );
+    }
+
+    // Watch position
+    function startWatch() {
+      if (!checkSupport()) return;
+      if (watchId) return;
+
+      log('Starting position watch...', 'info');
+      document.getElementById('watchIndicator').classList.add('active');
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          updateDisplay(position);
+          log(`Position update: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`, 'info');
+        },
+        (error) => {
+          log(`Watch error: ${error.message}`, 'error');
+        },
+        getOptions()
+      );
+
+      document.getElementById('watchBtn').disabled = true;
+      document.getElementById('stopWatchBtn').disabled = false;
+    }
+
+    function stopWatch() {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        log('Position watch stopped', 'warning');
+        document.getElementById('watchIndicator').classList.remove('active');
+        document.getElementById('watchBtn').disabled = false;
+        document.getElementById('stopWatchBtn').disabled = true;
+      }
+    }
+
+    // Export
+    function exportHistory() {
+      if (positions.length === 0) {
+        log('No positions to export', 'warning');
+        return;
+      }
+
+      let csv = 'timestamp,latitude,longitude,accuracy,altitude,heading,speed\n';
+      positions.forEach(p => {
+        csv += `${p.timestamp},${p.latitude},${p.longitude},${p.accuracy || ''},${p.altitude || ''},${p.heading || ''},${p.speed || ''}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geolocation_${Date.now()}.csv`;
+      a.click();
+      log(`Exported ${positions.length} positions`, 'success');
+    }
+
+    // Event listeners
+    document.getElementById('getPositionBtn').addEventListener('click', getPosition);
+    document.getElementById('watchBtn').addEventListener('click', startWatch);
+    document.getElementById('stopWatchBtn').addEventListener('click', stopWatch);
+    document.getElementById('exportBtn').addEventListener('click', exportHistory);
+
+    // Automation API
+    window.GeolocationTest = {
+      getPosition,
+      startWatch,
+      stopWatch,
+      getHistory: () => positions,
+      getLatest: () => positions[positions.length - 1],
+    };
+
+    // Init
+    checkSupport();
+    log('Geolocation test page ready', 'success');
+  </script>
+</body>
+</html>

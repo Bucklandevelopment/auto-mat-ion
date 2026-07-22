@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibration Test | auto-mat-ion</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface-2: #252540;
+      --primary: #00d4aa;
+      --secondary: #7c3aed;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .back-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 1.5rem;
+    }
+    h1 { font-size: 1.5rem; }
+    .status {
+      margin-left: auto;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+    }
+    .status.available { background: var(--success); color: #000; }
+    .status.unavailable { background: var(--error); color: #fff; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 1rem;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    /* Vibration visualization */
+    .vibration-visual {
+      width: 120px;
+      height: 120px;
+      margin: 20px auto;
+      border-radius: 50%;
+      background: var(--surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .vibration-visual.active {
+      animation: vibrate 0.1s linear infinite;
+    }
+    .vibration-icon {
+      font-size: 3rem;
+    }
+    .pulse-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 3px solid var(--primary);
+      opacity: 0;
+    }
+    .vibration-visual.active .pulse-ring {
+      animation: pulse 0.5s ease-out infinite;
+    }
+    @keyframes vibrate {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    /* Quick patterns */
+    .pattern-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .pattern-btn {
+      padding: 16px;
+      background: var(--surface-2);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .pattern-btn:hover {
+      border-color: var(--primary);
+    }
+    .pattern-btn .icon {
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+    }
+    .pattern-btn .name {
+      font-size: 0.875rem;
+      color: var(--text);
+    }
+    .pattern-btn .desc {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    /* Custom pattern builder */
+    .pattern-builder {
+      margin-top: 20px;
+    }
+    .pattern-timeline {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .pattern-segment {
+      height: 40px;
+      min-width: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .pattern-segment.on {
+      background: var(--primary);
+      color: var(--bg);
+    }
+    .pattern-segment.off {
+      background: var(--surface-2);
+      color: var(--text-dim);
+    }
+    .pattern-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pattern-controls button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .pattern-controls .primary {
+      background: var(--primary);
+      color: var(--bg);
+    }
+    .pattern-controls .secondary {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    /* Duration slider */
+    .slider-container {
+      margin: 16px 0;
+    }
+    .slider-container label {
+      display: block;
+      font-size: 0.875rem;
+      margin-bottom: 8px;
+    }
+    .slider-container input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+    .slider-value {
+      font-family: monospace;
+      color: var(--primary);
+    }
+
+    /* Main controls */
+    .main-controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .main-controls button {
+      flex: 1;
+      padding: 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .main-controls .primary {
+      background: var(--primary);
+      color: var(--bg);
+    }
+    .main-controls .danger {
+      background: var(--error);
+      color: #fff;
+    }
+
+    .log {
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid var(--surface);
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    .log-time {
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="../index.html" class="back-link">←</a>
+    <h1>📳 Vibration API</h1>
+    <span class="status" id="status">Checking...</span>
+  </header>
+
+  <div class="grid">
+    <!-- Visual -->
+    <div class="card">
+      <h3>Vibration Status</h3>
+      <div class="vibration-visual" id="vibrationVisual">
+        <div class="pulse-ring"></div>
+        <div class="vibration-icon">📳</div>
+      </div>
+      <div id="vibrationMessage" style="text-align: center; color: var(--text-dim);"></div>
+    </div>
+
+    <!-- Quick Patterns -->
+    <div class="card">
+      <h3>Quick Patterns</h3>
+      <div class="pattern-grid">
+        <div class="pattern-btn" onclick="playPattern('tap')">
+          <div class="icon">👆</div>
+          <div class="name">Tap</div>
+          <div class="desc">50ms</div>
+        </div>
+        <div class="pattern-btn" onclick="playPattern('double')">
+          <div class="icon">✌️</div>
+          <div class="name">Double Tap</div>
+          <div class="desc">50-100-50</div>
+        </div>
+        <div class="pattern-btn" onclick="playPattern('long')">
+          <div class="icon">✊</div>
+          <div class="name">Long Press</div>
+          <div class="desc">500ms</div>
+        </div>
+        <div class="pattern-btn" onclick="playPattern('sos')">
+          <div class="icon">🆘</div>
+          <div class="name">SOS</div>
+          <div class="desc">Morse code</div>
+        </div>
+        <div class="pattern-btn" onclick="playPattern('heartbeat')">
+          <div class="icon">❤️</div>
+          <div class="name">Heartbeat</div>
+          <div class="desc">Rhythmic</div>
+        </div>
+        <div class="pattern-btn" onclick="playPattern('notification')">
+          <div class="icon">🔔</div>
+          <div class="name">Notification</div>
+          <div class="desc">Buzz-buzz</div>
+        </div>
+        <div class="pattern-btn" onclick="playPattern('error')">
+          <div class="icon">❌</div>
+          <div class="name">Error</div>
+          <div class="desc">3 short</div>
+        </div>
+        <div class="pattern-btn" onclick="playPattern('success')">
+          <div class="icon">✅</div>
+          <div class="name">Success</div>
+          <div class="desc">2 short</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Duration -->
+    <div class="card">
+      <h3>Custom Vibration</h3>
+      <div class="slider-container">
+        <label>Duration: <span class="slider-value" id="durationValue">200</span>ms</label>
+        <input type="range" id="durationSlider" min="10" max="2000" value="200"
+               oninput="document.getElementById('durationValue').textContent = this.value">
+      </div>
+      <div class="main-controls">
+        <button class="primary" onclick="vibrateCustom()">Vibrate</button>
+        <button class="danger" onclick="stopVibration()">Stop</button>
+      </div>
+    </div>
+
+    <!-- Pattern Builder -->
+    <div class="card">
+      <h3>Pattern Builder</h3>
+      <p style="font-size: 0.875rem; color: var(--text-dim); margin-bottom: 12px;">
+        Click segments to toggle on/off. Pattern = [on, off, on, off, ...]
+      </p>
+      <div class="pattern-timeline" id="patternTimeline"></div>
+      <div class="pattern-controls">
+        <button class="secondary" onclick="addSegment(100)">+100ms</button>
+        <button class="secondary" onclick="addSegment(200)">+200ms</button>
+        <button class="secondary" onclick="addSegment(500)">+500ms</button>
+        <button class="secondary" onclick="removeSegment()">Remove</button>
+        <button class="secondary" onclick="clearPattern()">Clear</button>
+        <button class="primary" onclick="playCustomPattern()">Play</button>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card">
+      <h3>Vibration Log</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    // Check API availability
+    const isAvailable = 'vibrate' in navigator;
+
+    document.getElementById('status').className = `status ${isAvailable ? 'available' : 'unavailable'}`;
+    document.getElementById('status').textContent = isAvailable ? 'Available' : 'Not Available';
+
+    // Predefined patterns
+    const patterns = {
+      tap: [50],
+      double: [50, 100, 50],
+      long: [500],
+      sos: [100, 30, 100, 30, 100, 200, 300, 30, 300, 30, 300, 200, 100, 30, 100, 30, 100],
+      heartbeat: [100, 50, 100, 400],
+      notification: [100, 100, 100],
+      error: [100, 50, 100, 50, 100],
+      success: [50, 100, 100],
+    };
+
+    // Custom pattern builder
+    let customPattern = [];
+
+    function renderPattern() {
+      const container = document.getElementById('patternTimeline');
+      container.innerHTML = customPattern.map((duration, index) => {
+        const isOn = index % 2 === 0;
+        const width = Math.max(20, duration / 10); // Scale for visual
+        return `<div class="pattern-segment ${isOn ? 'on' : 'off'}"
+                     style="width: ${width}px"
+                     onclick="toggleSegment(${index})">${duration}</div>`;
+      }).join('');
+    }
+
+    function addSegment(duration) {
+      customPattern.push(duration);
+      renderPattern();
+    }
+
+    function removeSegment() {
+      customPattern.pop();
+      renderPattern();
+    }
+
+    function clearPattern() {
+      customPattern = [];
+      renderPattern();
+    }
+
+    function toggleSegment(index) {
+      // Swap with next if possible (changes timing)
+      if (index < customPattern.length - 1) {
+        [customPattern[index], customPattern[index + 1]] =
+          [customPattern[index + 1], customPattern[index]];
+        renderPattern();
+      }
+    }
+
+    // Vibration functions
+    function vibrate(pattern) {
+      if (!isAvailable) {
+        logEvent('Vibration API not available');
+        return false;
+      }
+
+      const visual = document.getElementById('vibrationVisual');
+      visual.classList.add('active');
+
+      const result = navigator.vibrate(pattern);
+
+      // Calculate total duration
+      const total = Array.isArray(pattern)
+        ? pattern.reduce((a, b) => a + b, 0)
+        : pattern;
+
+      setTimeout(() => {
+        visual.classList.remove('active');
+      }, total);
+
+      return result;
+    }
+
+    function playPattern(name) {
+      const pattern = patterns[name];
+      if (pattern) {
+        logEvent(`Playing pattern: ${name} [${pattern.join(', ')}]`);
+        vibrate(pattern);
+      }
+    }
+
+    function vibrateCustom() {
+      const duration = parseInt(document.getElementById('durationSlider').value);
+      logEvent(`Custom vibration: ${duration}ms`);
+      vibrate(duration);
+    }
+
+    function playCustomPattern() {
+      if (customPattern.length === 0) {
+        logEvent('No custom pattern defined');
+        return;
+      }
+      logEvent(`Custom pattern: [${customPattern.join(', ')}]`);
+      vibrate(customPattern);
+    }
+
+    function stopVibration() {
+      if (isAvailable) {
+        navigator.vibrate(0);
+        document.getElementById('vibrationVisual').classList.remove('active');
+        logEvent('Vibration stopped');
+      }
+    }
+
+    function logEvent(message) {
+      const log = document.getElementById('log');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+      log.insertBefore(entry, log.firstChild);
+
+      // Limit log entries
+      while (log.children.length > 50) {
+        log.removeChild(log.lastChild);
+      }
+    }
+
+    // Initialize
+    renderPattern();
+    logEvent(`Vibration API: ${isAvailable ? 'Available' : 'Not available'}`);
+
+    // Test interface
+    window.VibrationTest = {
+      isAvailable: () => isAvailable,
+      vibrate,
+      stop: stopVibration,
+      playPattern,
+      patterns,
+      getCustomPattern: () => customPattern,
+      setCustomPattern: (p) => { customPattern = p; renderPattern(); },
+    };
+  </script>
+</body>
+</html>

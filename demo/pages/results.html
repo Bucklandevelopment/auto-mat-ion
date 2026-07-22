@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Results - auto-mat-ion</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #333;
+    }
+    h1 { color: #4a9eff; font-size: 24px; }
+    .stats {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+      color: #888;
+    }
+    .stats span { color: #4a9eff; font-weight: bold; }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #1a1a2e;
+      color: #fff;
+      border: 1px solid #333;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover { background: #2a2a4e; border-color: #4a9eff; }
+    button.danger { border-color: #ff4a4a; }
+    button.danger:hover { background: #4e2a2a; }
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    select {
+      background: #1a1a2e;
+      color: #fff;
+      border: 1px solid #333;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .card-media {
+      width: 100%;
+      height: 200px;
+      object-fit: contain;
+      background: #0a0a0f;
+    }
+    .card-body {
+      padding: 15px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #4a9eff;
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+    .card-meta {
+      font-size: 12px;
+      color: #888;
+      display: grid;
+      gap: 4px;
+    }
+    .card-meta .label { color: #666; }
+    .card-meta .value { color: #ccc; }
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #333;
+    }
+    .card-actions a {
+      color: #4a9eff;
+      text-decoration: none;
+      font-size: 12px;
+    }
+    .card-actions a:hover { text-decoration: underline; }
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: #666;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 20px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .badge-image { background: #1e3a5f; color: #4a9eff; }
+    .badge-video { background: #3a1e5f; color: #9e4aff; }
+    .badge-json { background: #1e5f3a; color: #4aff9e; }
+    .badge-log { background: #5f5f1e; color: #ffff4a; }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📊 Test Results</h1>
+    <div class="stats">
+      <div>Total: <span id="totalCount">0</span></div>
+      <div>Images: <span id="imageCount">0</span></div>
+      <div>Videos: <span id="videoCount">0</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="loadResults()">🔄 Refresh</button>
+    <button onclick="clearResults()" class="danger">🗑️ Clear All</button>
+    <a href="/sensors/camera.html"><button>📷 Camera Test</button></a>
+    <a href="/"><button>🏠 Home</button></a>
+  </div>
+
+  <div class="filters">
+    <select id="filterType" onchange="applyFilters()">
+      <option value="all">All Types</option>
+      <option value="image">Images Only</option>
+      <option value="video">Videos Only</option>
+      <option value="json">JSON Only</option>
+    </select>
+    <select id="filterDevice" onchange="applyFilters()">
+      <option value="all">All Devices</option>
+    </select>
+    <select id="sortBy" onchange="applyFilters()">
+      <option value="newest">Newest First</option>
+      <option value="oldest">Oldest First</option>
+      <option value="size">Largest First</option>
+    </select>
+  </div>
+
+  <div id="resultsContainer" class="loading">Loading results...</div>
+
+  <script>
+    let allResults = [];
+    let filteredResults = [];
+
+    async function loadResults() {
+      const container = document.getElementById('resultsContainer');
+      container.className = 'loading';
+      container.innerHTML = 'Loading results...';
+
+      try {
+        const response = await fetch('/api/results');
+        const data = await response.json();
+        allResults = data.results || [];
+
+        // Update stats
+        document.getElementById('totalCount').textContent = allResults.length;
+        document.getElementById('imageCount').textContent = allResults.filter(r => r.type === 'image').length;
+        document.getElementById('videoCount').textContent = allResults.filter(r => r.type === 'video').length;
+
+        // Populate device filter
+        const devices = [...new Set(allResults.map(r => r.deviceName))];
+        const deviceSelect = document.getElementById('filterDevice');
+        deviceSelect.innerHTML = '<option value="all">All Devices</option>';
+        for (const device of devices) {
+          deviceSelect.innerHTML += `<option value="${device}">${device}</option>`;
+        }
+
+        applyFilters();
+      } catch (error) {
+        container.className = 'empty';
+        container.innerHTML = `
+          <div class="empty-icon">⚠️</div>
+          <div>Failed to load results</div>
+          <div style="margin-top: 10px; font-size: 12px;">${error.message}</div>
+        `;
+      }
+    }
+
+    function applyFilters() {
+      const typeFilter = document.getElementById('filterType').value;
+      const deviceFilter = document.getElementById('filterDevice').value;
+      const sortBy = document.getElementById('sortBy').value;
+
+      filteredResults = allResults.filter(r => {
+        if (typeFilter !== 'all' && r.type !== typeFilter) return false;
+        if (deviceFilter !== 'all' && r.deviceName !== deviceFilter) return false;
+        return true;
+      });
+
+      // Sort
+      filteredResults.sort((a, b) => {
+        if (sortBy === 'newest') return new Date(b.timestamp) - new Date(a.timestamp);
+        if (sortBy === 'oldest') return new Date(a.timestamp) - new Date(b.timestamp);
+        if (sortBy === 'size') return b.size - a.size;
+        return 0;
+      });
+
+      renderResults();
+    }
+
+    function renderResults() {
+      const container = document.getElementById('resultsContainer');
+
+      if (filteredResults.length === 0) {
+        container.className = 'empty';
+        container.innerHTML = `
+          <div class="empty-icon">📭</div>
+          <div>No results yet</div>
+          <div style="margin-top: 10px; font-size: 14px;">
+            Run a test from <a href="/sensors/camera.html" style="color: #4a9eff;">Camera Test</a> to capture results
+          </div>
+        `;
+        return;
+      }
+
+      container.className = 'grid';
+      container.innerHTML = filteredResults.map(result => {
+        const badgeClass = `badge badge-${result.type}`;
+        const fileUrl = `/api/results/file/${result.id}`;
+        const date = new Date(result.timestamp);
+        const timeStr = date.toLocaleString();
+        const sizeStr = (result.size / 1024).toFixed(1) + ' KB';
+
+        let mediaHtml = '';
+        if (result.type === 'image') {
+          mediaHtml = `<img class="card-media" src="${fileUrl}" alt="${result.testName}" loading="lazy" />`;
+        } else if (result.type === 'video') {
+          mediaHtml = `<video class="card-media" src="${fileUrl}" controls></video>`;
+        } else {
+          mediaHtml = `<div class="card-media" style="display:flex;align-items:center;justify-content:center;font-size:48px;">
+            ${result.type === 'json' ? '📋' : '📄'}
+          </div>`;
+        }
+
+        return `
+          <div class="card">
+            ${mediaHtml}
+            <div class="card-body">
+              <div class="card-title">${result.testName}</div>
+              <div class="card-meta">
+                <div><span class="label">Type:</span> <span class="${badgeClass}">${result.type}</span></div>
+                <div><span class="label">Device:</span> <span class="value">${result.deviceName}</span></div>
+                <div><span class="label">Size:</span> <span class="value">${sizeStr}</span></div>
+                <div><span class="label">Time:</span> <span class="value">${timeStr}</span></div>
+              </div>
+              <div class="card-actions">
+                <a href="${fileUrl}" target="_blank">📥 Download</a>
+                <a href="${fileUrl}" target="_blank">🔗 Open</a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function clearResults() {
+      if (!confirm('Are you sure you want to clear all results?')) return;
+
+      try {
+        await fetch('/api/results/clear', { method: 'DELETE' });
+        loadResults();
+      } catch (error) {
+        alert('Failed to clear results: ' + error.message);
+      }
+    }
+
+    // Initial load
+    loadResults();
+
+    // Auto-refresh every 10 seconds
+    setInterval(loadResults, 10000);
+  </script>
+</body>
+</html>

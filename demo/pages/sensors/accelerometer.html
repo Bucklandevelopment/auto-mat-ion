@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accelerometer Sensor Test | auto-mat-ion</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface-2: #252540;
+      --primary: #00d4aa;
+      --secondary: #7c3aed;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--surface-2);
+      margin-bottom: 24px;
+    }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 1.5rem; }
+    h1 { font-size: 1.75rem; }
+
+    .visualizer {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .cube-container {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 300px;
+      perspective: 600px;
+    }
+    .cube {
+      width: 150px;
+      height: 150px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.1s;
+    }
+    .cube-face {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border: 2px solid var(--primary);
+      background: rgba(0, 212, 170, 0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .front  { transform: translateZ(75px); }
+    .back   { transform: rotateY(180deg) translateZ(75px); }
+    .right  { transform: rotateY(90deg) translateZ(75px); }
+    .left   { transform: rotateY(-90deg) translateZ(75px); }
+    .top    { transform: rotateX(90deg) translateZ(75px); }
+    .bottom { transform: rotateX(-90deg) translateZ(75px); }
+
+    .graph-container {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    #graph {
+      width: 100%;
+      height: 260px;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+
+    .readings {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .reading-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    .reading-axis {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .reading-axis.x { color: #ef4444; }
+    .reading-axis.y { color: #22c55e; }
+    .reading-axis.z { color: #3b82f6; }
+    .reading-value {
+      font-size: 2.5rem;
+      font-family: monospace;
+      color: var(--text);
+    }
+    .reading-unit {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .control-group {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .control-group h3 {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    select, button {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--surface-2);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    button.primary { background: var(--primary); color: var(--bg); font-weight: 600; border: none; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .button-row { display: flex; gap: 12px; margin-top: 12px; }
+    .button-row button { flex: 1; }
+
+    .stats-panel {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 12px;
+    }
+    .stat-item { text-align: center; padding: 12px; background: var(--surface-2); border-radius: 8px; }
+    .stat-value { font-size: 1.25rem; font-weight: 600; color: var(--primary); font-family: monospace; }
+    .stat-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-top: 4px; }
+
+    .log-panel { background: var(--surface); border-radius: 12px; padding: 20px; }
+    #logOutput {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.75rem;
+    }
+    .log-entry { padding: 2px 0; }
+    .log-entry.info { color: var(--primary); }
+    .log-entry.success { color: var(--success); }
+    .log-entry.warning { color: var(--warning); }
+    .log-entry.error { color: var(--error); }
+
+    .permission-notice {
+      background: var(--warning);
+      color: var(--bg);
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="../index.html" class="back-link">←</a>
+      <h1>📐 Accelerometer Sensor Test</h1>
+    </header>
+
+    <div class="permission-notice" id="permissionNotice">
+      ⚠️ Motion sensors require user permission on iOS 13+. Click "Start" to request access.
+    </div>
+
+    <div class="visualizer">
+      <div class="cube-container">
+        <div class="cube" id="cube">
+          <div class="cube-face front">F</div>
+          <div class="cube-face back">B</div>
+          <div class="cube-face right">R</div>
+          <div class="cube-face left">L</div>
+          <div class="cube-face top">T</div>
+          <div class="cube-face bottom">D</div>
+        </div>
+      </div>
+      <div class="graph-container">
+        <canvas id="graph"></canvas>
+      </div>
+    </div>
+
+    <div class="readings">
+      <div class="reading-card">
+        <div class="reading-axis x">X</div>
+        <div class="reading-value" id="valueX">0.00</div>
+        <div class="reading-unit">m/s²</div>
+      </div>
+      <div class="reading-card">
+        <div class="reading-axis y">Y</div>
+        <div class="reading-value" id="valueY">0.00</div>
+        <div class="reading-unit">m/s²</div>
+      </div>
+      <div class="reading-card">
+        <div class="reading-axis z">Z</div>
+        <div class="reading-value" id="valueZ">0.00</div>
+        <div class="reading-unit">m/s²</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <h3>Sensor Control</h3>
+        <button id="startBtn" class="primary">Start Accelerometer</button>
+        <div class="button-row">
+          <button id="stopBtn" disabled>Stop</button>
+          <button id="calibrateBtn" disabled>Calibrate</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h3>Sensor Type</h3>
+        <select id="sensorType">
+          <option value="accelerometer">Accelerometer</option>
+          <option value="linearAcceleration">Linear Acceleration</option>
+          <option value="gravity">Gravity</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <h3>Frequency</h3>
+        <select id="frequency">
+          <option value="60">60 Hz</option>
+          <option value="30">30 Hz</option>
+          <option value="10">10 Hz</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <h3>Data Export</h3>
+        <button id="exportBtn" disabled>📊 Export CSV</button>
+      </div>
+    </div>
+
+    <div class="stats-panel">
+      <h3>📊 Statistics</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="statSamples">0</div>
+          <div class="stat-label">Samples</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="statFreq">-</div>
+          <div class="stat-label">Hz</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="statMagnitude">0.00</div>
+          <div class="stat-label">Magnitude</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="statShakes">0</div>
+          <div class="stat-label">Shakes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="log-panel">
+      <h3>📝 Event Log</h3>
+      <div id="logOutput"></div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let sensor = null;
+    let isRunning = false;
+    let samples = [];
+    let shakeCount = 0;
+    let lastShakeTime = 0;
+    let calibration = { x: 0, y: 0, z: 0 };
+    let sampleCount = 0;
+    let lastSampleTime = 0;
+
+    const cube = document.getElementById('cube');
+    const canvas = document.getElementById('graph');
+    const ctx = canvas.getContext('2d');
+    const logOutput = document.getElementById('logOutput');
+
+    // Graph data
+    const graphData = { x: [], y: [], z: [] };
+    const maxPoints = 100;
+
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toISOString().substr(11, 12)}] ${message}`;
+      logOutput.appendChild(entry);
+      logOutput.scrollTop = logOutput.scrollHeight;
+    }
+
+    // Check for motion sensor support
+    function checkSupport() {
+      if ('Accelerometer' in window) {
+        log('Generic Sensor API supported', 'success');
+        return 'generic';
+      } else if ('DeviceMotionEvent' in window) {
+        log('DeviceMotion API supported', 'success');
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+          document.getElementById('permissionNotice').style.display = 'block';
+        }
+        return 'devicemotion';
+      } else {
+        log('No motion sensor API available', 'error');
+        return null;
+      }
+    }
+
+    // Start sensor
+    async function startSensor() {
+      const apiType = checkSupport();
+      if (!apiType) return;
+
+      try {
+        if (apiType === 'generic') {
+          const freq = parseInt(document.getElementById('frequency').value);
+          sensor = new Accelerometer({ frequency: freq });
+          sensor.addEventListener('reading', handleReading);
+          sensor.addEventListener('error', (e) => log(`Sensor error: ${e.error.message}`, 'error'));
+          sensor.start();
+        } else {
+          if (typeof DeviceMotionEvent.requestPermission === 'function') {
+            const permission = await DeviceMotionEvent.requestPermission();
+            if (permission !== 'granted') {
+              log('Motion permission denied', 'error');
+              return;
+            }
+          }
+          window.addEventListener('devicemotion', handleDeviceMotion);
+        }
+
+        isRunning = true;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        document.getElementById('calibrateBtn').disabled = false;
+        document.getElementById('exportBtn').disabled = false;
+        log('Accelerometer started', 'success');
+
+      } catch (err) {
+        log(`Failed to start: ${err.message}`, 'error');
+      }
+    }
+
+    // Stop sensor
+    function stopSensor() {
+      if (sensor) {
+        sensor.stop();
+        sensor = null;
+      }
+      window.removeEventListener('devicemotion', handleDeviceMotion);
+
+      isRunning = false;
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+      log('Accelerometer stopped', 'warning');
+    }
+
+    // Handle readings
+    function handleReading() {
+      const x = sensor.x - calibration.x;
+      const y = sensor.y - calibration.y;
+      const z = sensor.z - calibration.z;
+      updateDisplay(x, y, z);
+    }
+
+    function handleDeviceMotion(event) {
+      const accel = event.accelerationIncludingGravity || event.acceleration;
+      if (!accel) return;
+      const x = (accel.x || 0) - calibration.x;
+      const y = (accel.y || 0) - calibration.y;
+      const z = (accel.z || 0) - calibration.z;
+      updateDisplay(x, y, z);
+    }
+
+    function updateDisplay(x, y, z) {
+      // Update values
+      document.getElementById('valueX').textContent = x.toFixed(2);
+      document.getElementById('valueY').textContent = y.toFixed(2);
+      document.getElementById('valueZ').textContent = z.toFixed(2);
+
+      // Update cube rotation
+      const rotateX = Math.atan2(y, z) * (180 / Math.PI);
+      const rotateY = Math.atan2(x, z) * (180 / Math.PI);
+      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+      // Update graph
+      graphData.x.push(x);
+      graphData.y.push(y);
+      graphData.z.push(z);
+      if (graphData.x.length > maxPoints) {
+        graphData.x.shift();
+        graphData.y.shift();
+        graphData.z.shift();
+      }
+      drawGraph();
+
+      // Store sample
+      samples.push({ t: Date.now(), x, y, z });
+      sampleCount++;
+
+      // Calculate magnitude
+      const magnitude = Math.sqrt(x*x + y*y + z*z);
+      document.getElementById('statMagnitude').textContent = magnitude.toFixed(2);
+
+      // Detect shake
+      const now = Date.now();
+      if (magnitude > 15 && now - lastShakeTime > 500) {
+        shakeCount++;
+        lastShakeTime = now;
+        document.getElementById('statShakes').textContent = shakeCount;
+        log(`Shake detected! (magnitude: ${magnitude.toFixed(1)})`, 'warning');
+      }
+
+      // Update stats
+      document.getElementById('statSamples').textContent = sampleCount;
+      if (lastSampleTime) {
+        const freq = 1000 / (now - lastSampleTime);
+        document.getElementById('statFreq').textContent = freq.toFixed(0);
+      }
+      lastSampleTime = now;
+    }
+
+    function drawGraph() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      ctx.fillStyle = '#0f0f1a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw zero line
+      ctx.strokeStyle = '#333';
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+
+      const drawLine = (data, color) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        data.forEach((v, i) => {
+          const x = (i / maxPoints) * canvas.width;
+          const y = canvas.height / 2 - (v / 20) * (canvas.height / 2);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      };
+
+      drawLine(graphData.x, '#ef4444');
+      drawLine(graphData.y, '#22c55e');
+      drawLine(graphData.z, '#3b82f6');
+    }
+
+    // Calibrate
+    function calibrate() {
+      if (samples.length < 10) {
+        log('Need more samples to calibrate', 'warning');
+        return;
+      }
+      const recent = samples.slice(-10);
+      calibration.x = recent.reduce((a, s) => a + s.x, 0) / recent.length;
+      calibration.y = recent.reduce((a, s) => a + s.y, 0) / recent.length;
+      calibration.z = recent.reduce((a, s) => a + s.z, 0) / recent.length - 9.8;
+      log(`Calibrated: x=${calibration.x.toFixed(2)}, y=${calibration.y.toFixed(2)}, z=${calibration.z.toFixed(2)}`, 'success');
+    }
+
+    // Export CSV
+    function exportCSV() {
+      if (samples.length === 0) {
+        log('No data to export', 'warning');
+        return;
+      }
+      let csv = 'timestamp,x,y,z\n';
+      samples.forEach(s => {
+        csv += `${s.t},${s.x.toFixed(4)},${s.y.toFixed(4)},${s.z.toFixed(4)}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `accelerometer_${Date.now()}.csv`;
+      a.click();
+      log(`Exported ${samples.length} samples`, 'success');
+    }
+
+    // Event listeners
+    document.getElementById('startBtn').addEventListener('click', startSensor);
+    document.getElementById('stopBtn').addEventListener('click', stopSensor);
+    document.getElementById('calibrateBtn').addEventListener('click', calibrate);
+    document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+    // Automation API
+    window.AccelerometerTest = {
+      start: startSensor,
+      stop: stopSensor,
+      calibrate,
+      getValues: () => ({
+        x: parseFloat(document.getElementById('valueX').textContent),
+        y: parseFloat(document.getElementById('valueY').textContent),
+        z: parseFloat(document.getElementById('valueZ').textContent)
+      }),
+      getSamples: () => samples,
+      getShakeCount: () => shakeCount,
+    };
+
+    // Init
+    checkSupport();
+    log('Accelerometer test page ready', 'success');
+  </script>
+</body>
+</html>

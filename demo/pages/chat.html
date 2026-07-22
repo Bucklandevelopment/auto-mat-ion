@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant | auto-mat-ion</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface-2: #252540;
+      --primary: #00d4aa;
+      --secondary: #7c3aed;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--surface);
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--surface-2);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .back-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 1.5rem;
+    }
+    header h1 { font-size: 1.5rem; flex: 1; }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      color: var(--text-dim);
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-dim);
+    }
+    .status-dot.connected { background: var(--success); }
+    .status-dot.error { background: var(--error); }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 24px;
+    }
+
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      display: flex;
+      gap: 12px;
+      max-width: 85%;
+    }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.assistant { align-self: flex-start; }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    .message.user .avatar { background: var(--secondary); }
+    .message.assistant .avatar { background: var(--primary); }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      line-height: 1.5;
+    }
+    .message.user .bubble {
+      background: var(--secondary);
+      border-bottom-right-radius: 4px;
+    }
+    .message.assistant .bubble {
+      background: var(--surface-2);
+      border-bottom-left-radius: 4px;
+    }
+
+    .command-block {
+      background: var(--bg);
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      font-family: monospace;
+    }
+    .command-block .label {
+      font-size: 0.75rem;
+      color: var(--primary);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .command-block .cmd {
+      color: var(--primary);
+      font-size: 0.9rem;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .action-buttons button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    .action-buttons .execute {
+      background: var(--primary);
+      color: var(--bg);
+    }
+    .action-buttons .cancel {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--surface-2);
+    }
+
+    .result-block {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .result-block.success { border-left: 3px solid var(--success); }
+    .result-block.error { border-left: 3px solid var(--error); }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 8px 12px;
+    }
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-8px); }
+    }
+
+    .input-area {
+      padding: 16px;
+      background: var(--surface-2);
+      display: flex;
+      gap: 12px;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 14px 18px;
+      border-radius: 24px;
+      border: none;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+    .input-area input:focus {
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    .input-area input::placeholder {
+      color: var(--text-dim);
+    }
+    .input-area button {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: var(--primary);
+      color: var(--bg);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .input-area button:hover { transform: scale(1.1); }
+    .input-area button:disabled {
+      background: var(--text-dim);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .examples {
+      padding: 16px;
+      background: var(--surface-2);
+      border-top: 1px solid var(--surface);
+    }
+    .examples h4 {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .example-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .example-chip {
+      padding: 8px 14px;
+      background: var(--surface);
+      border-radius: 20px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .example-chip:hover {
+      background: var(--primary);
+      color: var(--bg);
+    }
+
+    .error-banner {
+      background: var(--error);
+      color: white;
+      padding: 12px 20px;
+      text-align: center;
+      display: none;
+    }
+    .error-banner.visible { display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="back-link">←</a>
+    <h1>🤖 AI Assistant</h1>
+    <div class="status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Connecting...</span>
+    </div>
+  </header>
+
+  <div class="error-banner" id="errorBanner">
+    Ollama not running. Start it with: <code>ollama serve</code>
+  </div>
+
+  <main>
+    <div class="chat-container">
+      <div class="messages" id="messages">
+        <div class="message assistant">
+          <div class="avatar">🤖</div>
+          <div class="bubble">
+            Hello! I'm the auto-mat-ion AI assistant. I can help you control your devices using natural language.
+            <br><br>
+            Try saying things like:<br>
+            • "List all connected devices"<br>
+            • "Start the demo server on port 8080"<br>
+            • "Run a quick test on my phone"
+          </div>
+        </div>
+      </div>
+
+      <div class="examples">
+        <h4>Quick Examples</h4>
+        <div class="example-chips">
+          <div class="example-chip" onclick="sendExample(this)">Show my devices</div>
+          <div class="example-chip" onclick="sendExample(this)">Start demo server</div>
+          <div class="example-chip" onclick="sendExample(this)">Run connectivity test</div>
+          <div class="example-chip" onclick="sendExample(this)">Check system status</div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <input
+          type="text"
+          id="userInput"
+          placeholder="Type a message..."
+          autocomplete="off"
+          onkeydown="if(event.key === 'Enter') sendMessage()"
+        />
+        <button onclick="sendMessage()" id="sendBtn">→</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Configuration
+    const OLLAMA_URL = 'http://localhost:11434';
+    const MODEL = 'llama3.2';
+
+    const SYSTEM_PROMPT = `You are an AI assistant for auto-mat-ion (ami), a distributed device testing framework.
+
+Your ONLY job is to translate natural language requests into ami CLI commands.
+
+AVAILABLE COMMANDS:
+- ami demo serve [port] - Start demo server
+- ami demo open [port] - Open demo in browser
+- ami demo list - List demo pages
+- ami devices list - List connected devices
+- ami devices setup <device-id> - Configure device
+- ami devices caps <device-id> - Show device capabilities
+- ami run zepto - Quick connectivity test
+- ami run quick [url] [device-id] - Quick browser test
+- ami clean all - Clean all data/logs/build
+- ami status - Show system status
+
+RULES:
+1. ONLY output ami commands from the list above
+2. If a request can't be fulfilled with these commands, explain why
+3. Never execute shell commands not in the list
+4. Be concise
+
+OUTPUT FORMAT:
+COMMAND: ami <command> [args]
+EXPLANATION: Brief description of what this does.
+
+If no valid command matches:
+COMMAND: NONE
+EXPLANATION: Why this request can't be fulfilled.`;
+
+    let conversationHistory = [
+      { role: 'system', content: SYSTEM_PROMPT }
+    ];
+
+    // Elements
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const errorBanner = document.getElementById('errorBanner');
+
+    // Check Ollama connection
+    async function checkConnection() {
+      try {
+        const response = await fetch(`${OLLAMA_URL}/api/tags`);
+        if (response.ok) {
+          statusDot.classList.add('connected');
+          statusText.textContent = 'Connected';
+          errorBanner.classList.remove('visible');
+          return true;
+        }
+      } catch (e) {
+        // Connection failed
+      }
+
+      statusDot.classList.add('error');
+      statusText.textContent = 'Disconnected';
+      errorBanner.classList.add('visible');
+      return false;
+    }
+
+    // Add message to UI
+    function addMessage(role, content) {
+      const msgEl = document.createElement('div');
+      msgEl.className = `message ${role}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = role === 'user' ? '👤' : '🤖';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = content;
+
+      msgEl.appendChild(avatar);
+      msgEl.appendChild(bubble);
+      messagesEl.appendChild(msgEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      return bubble;
+    }
+
+    // Add typing indicator
+    function addTypingIndicator() {
+      const indicator = document.createElement('div');
+      indicator.className = 'message assistant';
+      indicator.id = 'typingIndicator';
+      indicator.innerHTML = `
+        <div class="avatar">🤖</div>
+        <div class="bubble">
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      `;
+      messagesEl.appendChild(indicator);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+    }
+
+    // Parse command from response
+    function parseCommand(response) {
+      const cmdMatch = response.match(/COMMAND:\s*(.+?)(?:\n|$)/i);
+      const explMatch = response.match(/EXPLANATION:\s*(.+?)(?:\n\n|$)/is);
+
+      const command = cmdMatch?.[1]?.trim() || '';
+      const explanation = explMatch?.[1]?.trim() || response;
+
+      if (command.toUpperCase() === 'NONE' || !command) {
+        return { valid: false, command: '', explanation };
+      }
+
+      // Validate command pattern
+      const validPatterns = [
+        /^ami\s+demo\s+(serve|open|list)/,
+        /^ami\s+devices\s+(list|setup|caps)/,
+        /^ami\s+run\s+(zepto|quick|matrix)/,
+        /^ami\s+clean\s+(all|data|logs|build)/,
+        /^ami\s+analysis\s+(setup|jupyter|lab)/,
+        /^ami\s+status$/,
+      ];
+
+      const isValid = validPatterns.some(p => p.test(command));
+      return { valid: isValid, command, explanation };
+    }
+
+    // Send message to Ollama
+    async function sendMessage() {
+      const input = inputEl.value.trim();
+      if (!input) return;
+
+      // Check connection first
+      if (!(await checkConnection())) return;
+
+      // Disable input
+      inputEl.value = '';
+      inputEl.disabled = true;
+      sendBtn.disabled = true;
+
+      // Add user message
+      addMessage('user', input);
+      conversationHistory.push({ role: 'user', content: input });
+
+      // Show typing indicator
+      addTypingIndicator();
+
+      try {
+        // Call Ollama
+        const response = await fetch(`${OLLAMA_URL}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: MODEL,
+            messages: conversationHistory,
+            stream: false,
+          }),
+        });
+
+        if (!response.ok) throw new Error('Ollama request failed');
+
+        const data = await response.json();
+        const aiResponse = data.message.content;
+
+        // Add to history
+        conversationHistory.push({ role: 'assistant', content: aiResponse });
+
+        // Parse command
+        const parsed = parseCommand(aiResponse);
+
+        // Build response HTML
+        let html = parsed.explanation.replace(/\n/g, '<br>');
+
+        if (parsed.valid) {
+          html += `
+            <div class="command-block">
+              <div class="label">Command</div>
+              <div class="cmd">${parsed.command}</div>
+            </div>
+            <div class="action-buttons">
+              <button class="execute" onclick="executeCommand('${parsed.command}', this)">
+                ⚡ Execute
+              </button>
+              <button class="cancel" onclick="this.parentElement.remove()">
+                Cancel
+              </button>
+            </div>
+          `;
+        }
+
+        removeTypingIndicator();
+        addMessage('assistant', html);
+
+      } catch (error) {
+        removeTypingIndicator();
+        addMessage('assistant', `❌ Error: ${error.message}`);
+      }
+
+      // Re-enable input
+      inputEl.disabled = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
+
+    // Execute command (simulated - in real app would call backend)
+    async function executeCommand(command, button) {
+      const actionsEl = button.parentElement;
+      actionsEl.innerHTML = '<span>⏳ Executing...</span>';
+
+      // Simulate execution (in real app, this would call a backend API)
+      await new Promise(r => setTimeout(r, 1000));
+
+      // Show result (simulated)
+      const resultEl = document.createElement('div');
+      resultEl.className = 'result-block success';
+      resultEl.textContent = `Executed: ${command}\n\n(Note: Backend execution not implemented in demo.\nUse CLI: ${command})`;
+      actionsEl.replaceWith(resultEl);
+    }
+
+    // Send example
+    function sendExample(el) {
+      inputEl.value = el.textContent;
+      sendMessage();
+    }
+
+    // Initialize
+    checkConnection();
+    setInterval(checkConnection, 10000);
+  </script>
+</body>
+</html>

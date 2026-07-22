@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>auto-mat-ion | Sensor Test Suite</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface-2: #252540;
+      --primary: #00d4aa;
+      --secondary: #7c3aed;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      padding: 40px 0;
+      border-bottom: 1px solid var(--surface-2);
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+    }
+
+    .sensor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .sensor-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      text-decoration: none;
+      color: var(--text);
+      border: 1px solid var(--surface-2);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sensor-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary);
+      box-shadow: 0 8px 30px rgba(0, 212, 170, 0.15);
+    }
+
+    .sensor-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .sensor-card:hover::before {
+      opacity: 1;
+    }
+
+    .sensor-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+    }
+
+    .sensor-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .sensor-desc {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .sensor-api {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 10px;
+      background: var(--surface-2);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: monospace;
+      color: var(--primary);
+    }
+
+    .status-indicator {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-dim);
+    }
+
+    .status-indicator.supported {
+      background: var(--success);
+    }
+
+    .status-indicator.unsupported {
+      background: var(--error);
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .info-panel {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 40px;
+    }
+
+    .info-panel h3 {
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+
+    .device-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .device-info-item {
+      background: var(--surface-2);
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+
+    .device-info-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .device-info-value {
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-dim);
+      font-size: 0.875rem;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤖 auto-mat-ion</h1>
+      <p class="subtitle">Browser Sensor Test Suite</p>
+      <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="./chat.html" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--primary); color: var(--bg); border-radius: 8px; text-decoration: none; font-weight: 500;">
+          🤖 AI Assistant
+        </a>
+        <a href="./results.html" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--secondary); color: white; border-radius: 8px; text-decoration: none; font-weight: 500;">
+          📊 Test Results
+        </a>
+      </div>
+    </header>
+
+    <section>
+      <h2 class="section-title">📹 Media Sensors</h2>
+      <div class="sensor-grid">
+        <a href="./sensors/camera.html" class="sensor-card">
+          <div id="camera-status" class="status-indicator"></div>
+          <div class="sensor-icon">📷</div>
+          <div class="sensor-name">Camera</div>
+          <div class="sensor-desc">Video capture, resolution, facing modes, torch control</div>
+          <span class="sensor-api">getUserMedia(video)</span>
+        </a>
+
+        <a href="./sensors/microphone.html" class="sensor-card">
+          <div id="mic-status" class="status-indicator"></div>
+          <div class="sensor-icon">🎤</div>
+          <div class="sensor-name">Microphone</div>
+          <div class="sensor-desc">Audio capture, sample rates, echo cancellation</div>
+          <span class="sensor-api">getUserMedia(audio)</span>
+        </a>
+
+        <a href="./sensors/screen-capture.html" class="sensor-card">
+          <div id="screen-status" class="status-indicator"></div>
+          <div class="sensor-icon">🖥️</div>
+          <div class="sensor-name">Screen Capture</div>
+          <div class="sensor-desc">Display capture, window/tab sharing</div>
+          <span class="sensor-api">getDisplayMedia()</span>
+        </a>
+
+        <a href="./sensors/media-devices.html" class="sensor-card">
+          <div id="devices-status" class="status-indicator"></div>
+          <div class="sensor-icon">🔌</div>
+          <div class="sensor-name">Media Devices</div>
+          <div class="sensor-desc">Device enumeration, capabilities, constraints</div>
+          <span class="sensor-api">enumerateDevices()</span>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">🧭 Motion Sensors</h2>
+      <div class="sensor-grid">
+        <a href="./sensors/accelerometer.html" class="sensor-card">
+          <div id="accel-status" class="status-indicator"></div>
+          <div class="sensor-icon">📐</div>
+          <div class="sensor-name">Accelerometer</div>
+          <div class="sensor-desc">Device acceleration, gravity, linear acceleration</div>
+          <span class="sensor-api">Accelerometer API</span>
+        </a>
+
+        <a href="./sensors/gyroscope.html" class="sensor-card">
+          <div id="gyro-status" class="status-indicator"></div>
+          <div class="sensor-icon">🔄</div>
+          <div class="sensor-name">Gyroscope</div>
+          <div class="sensor-desc">Angular velocity, rotation rate</div>
+          <span class="sensor-api">Gyroscope API</span>
+        </a>
+
+        <a href="./sensors/orientation.html" class="sensor-card">
+          <div id="orient-status" class="status-indicator"></div>
+          <div class="sensor-icon">🧭</div>
+          <div class="sensor-name">Device Orientation</div>
+          <div class="sensor-desc">Alpha, beta, gamma angles, compass</div>
+          <span class="sensor-api">DeviceOrientationEvent</span>
+        </a>
+
+        <a href="./sensors/motion.html" class="sensor-card">
+          <div id="motion-status" class="status-indicator"></div>
+          <div class="sensor-icon">🏃</div>
+          <div class="sensor-name">Device Motion</div>
+          <div class="sensor-desc">Acceleration with gravity, rotation rate</div>
+          <span class="sensor-api">DeviceMotionEvent</span>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">🌐 Environment Sensors</h2>
+      <div class="sensor-grid">
+        <a href="./sensors/geolocation.html" class="sensor-card">
+          <div id="geo-status" class="status-indicator"></div>
+          <div class="sensor-icon">📍</div>
+          <div class="sensor-name">Geolocation</div>
+          <div class="sensor-desc">GPS position, accuracy, altitude, speed</div>
+          <span class="sensor-api">Geolocation API</span>
+        </a>
+
+        <a href="./sensors/ambient-light.html" class="sensor-card">
+          <div id="light-status" class="status-indicator"></div>
+          <div class="sensor-icon">💡</div>
+          <div class="sensor-name">Ambient Light</div>
+          <div class="sensor-desc">Environmental light level in lux</div>
+          <span class="sensor-api">AmbientLightSensor</span>
+        </a>
+
+        <a href="./sensors/proximity.html" class="sensor-card">
+          <div id="prox-status" class="status-indicator"></div>
+          <div class="sensor-icon">👋</div>
+          <div class="sensor-name">Proximity</div>
+          <div class="sensor-desc">Object proximity detection</div>
+          <span class="sensor-api">ProximitySensor</span>
+        </a>
+
+        <a href="./sensors/magnetometer.html" class="sensor-card">
+          <div id="mag-status" class="status-indicator"></div>
+          <div class="sensor-icon">🧲</div>
+          <div class="sensor-name">Magnetometer</div>
+          <div class="sensor-desc">Magnetic field strength</div>
+          <span class="sensor-api">Magnetometer API</span>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">🔗 Connectivity</h2>
+      <div class="sensor-grid">
+        <a href="./sensors/network.html" class="sensor-card">
+          <div id="network-status" class="status-indicator"></div>
+          <div class="sensor-icon">🌐</div>
+          <div class="sensor-name">Network Info</div>
+          <div class="sensor-desc">Connection type, speed, data saver</div>
+          <span class="sensor-api">Network Information API</span>
+        </a>
+
+        <a href="./sensors/bluetooth.html" class="sensor-card">
+          <div id="bt-status" class="status-indicator"></div>
+          <div class="sensor-icon">📶</div>
+          <div class="sensor-name">Bluetooth</div>
+          <div class="sensor-desc">BLE device scanning, connection, GATT services</div>
+          <span class="sensor-api">Web Bluetooth API</span>
+        </a>
+
+        <a href="./sensors/usb.html" class="sensor-card">
+          <div id="usb-status" class="status-indicator"></div>
+          <div class="sensor-icon">🔌</div>
+          <div class="sensor-name">USB</div>
+          <div class="sensor-desc">USB device enumeration, data transfer</div>
+          <span class="sensor-api">WebUSB API</span>
+        </a>
+
+        <a href="./sensors/nfc.html" class="sensor-card">
+          <div id="nfc-status" class="status-indicator"></div>
+          <div class="sensor-icon">📱</div>
+          <div class="sensor-name">NFC</div>
+          <div class="sensor-desc">NFC tag reading/writing</div>
+          <span class="sensor-api">Web NFC API</span>
+        </a>
+
+        <a href="./sensors/serial.html" class="sensor-card">
+          <div id="serial-status" class="status-indicator"></div>
+          <div class="sensor-icon">🔗</div>
+          <div class="sensor-name">Serial</div>
+          <div class="sensor-desc">Serial port communication</div>
+          <span class="sensor-api">Web Serial API</span>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">⚡ Hardware Features</h2>
+      <div class="sensor-grid">
+        <a href="./sensors/battery.html" class="sensor-card">
+          <div id="battery-status" class="status-indicator"></div>
+          <div class="sensor-icon">🔋</div>
+          <div class="sensor-name">Battery</div>
+          <div class="sensor-desc">Battery level, charging status</div>
+          <span class="sensor-api">Battery Status API</span>
+        </a>
+
+        <a href="./sensors/vibration.html" class="sensor-card">
+          <div id="vibrate-status" class="status-indicator"></div>
+          <div class="sensor-icon">📳</div>
+          <div class="sensor-name">Vibration</div>
+          <div class="sensor-desc">Haptic feedback patterns</div>
+          <span class="sensor-api">Vibration API</span>
+        </a>
+
+        <a href="./sensors/gamepad.html" class="sensor-card">
+          <div id="gamepad-status" class="status-indicator"></div>
+          <div class="sensor-icon">🎮</div>
+          <div class="sensor-name">Gamepad</div>
+          <div class="sensor-desc">Game controller input</div>
+          <span class="sensor-api">Gamepad API</span>
+        </a>
+
+        <a href="./sensors/wake-lock.html" class="sensor-card">
+          <div id="wake-status" class="status-indicator"></div>
+          <div class="sensor-icon">☀️</div>
+          <div class="sensor-name">Wake Lock</div>
+          <div class="sensor-desc">Prevent screen sleep</div>
+          <span class="sensor-api">Screen Wake Lock API</span>
+        </a>
+      </div>
+    </section>
+
+    <div class="info-panel">
+      <h3>📊 Device Information</h3>
+      <div class="device-info">
+        <div class="device-info-item">
+          <div class="device-info-label">User Agent</div>
+          <div id="ua" class="device-info-value">Loading...</div>
+        </div>
+        <div class="device-info-item">
+          <div class="device-info-label">Platform</div>
+          <div id="platform" class="device-info-value">Loading...</div>
+        </div>
+        <div class="device-info-item">
+          <div class="device-info-label">Screen</div>
+          <div id="screen" class="device-info-value">Loading...</div>
+        </div>
+        <div class="device-info-item">
+          <div class="device-info-label">Pixel Ratio</div>
+          <div id="dpr" class="device-info-value">Loading...</div>
+        </div>
+        <div class="device-info-item">
+          <div class="device-info-label">Touch Points</div>
+          <div id="touch" class="device-info-value">Loading...</div>
+        </div>
+        <div class="device-info-item">
+          <div class="device-info-label">Connection</div>
+          <div id="connection" class="device-info-value">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>auto-mat-ion v1.0.0 | <a href="https://github.com/UTOP-IA">UTOP.IA</a></p>
+    </footer>
+  </div>
+
+  <script>
+    // Check API support
+    function checkSupport(id, condition) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add(condition ? 'supported' : 'unsupported');
+      }
+    }
+
+    // Media APIs
+    checkSupport('camera-status', navigator.mediaDevices?.getUserMedia);
+    checkSupport('mic-status', navigator.mediaDevices?.getUserMedia);
+    checkSupport('screen-status', navigator.mediaDevices?.getDisplayMedia);
+    checkSupport('devices-status', navigator.mediaDevices?.enumerateDevices);
+
+    // Motion APIs
+    checkSupport('accel-status', 'Accelerometer' in window);
+    checkSupport('gyro-status', 'Gyroscope' in window);
+    checkSupport('orient-status', 'DeviceOrientationEvent' in window);
+    checkSupport('motion-status', 'DeviceMotionEvent' in window);
+
+    // Environment APIs
+    checkSupport('geo-status', 'geolocation' in navigator);
+    checkSupport('light-status', 'AmbientLightSensor' in window);
+    checkSupport('prox-status', 'ProximitySensor' in window);
+    checkSupport('mag-status', 'Magnetometer' in window);
+
+    // Connectivity APIs
+    checkSupport('network-status', navigator.connection || navigator.mozConnection);
+    checkSupport('bt-status', 'bluetooth' in navigator);
+    checkSupport('usb-status', 'usb' in navigator);
+    checkSupport('nfc-status', 'NDEFReader' in window);
+    checkSupport('serial-status', 'serial' in navigator);
+
+    // Hardware APIs
+    checkSupport('battery-status', 'getBattery' in navigator);
+    checkSupport('vibrate-status', 'vibrate' in navigator);
+    checkSupport('gamepad-status', 'getGamepads' in navigator);
+    checkSupport('wake-status', 'wakeLock' in navigator);
+
+    // Device info
+    document.getElementById('ua').textContent = navigator.userAgent.substring(0, 60) + '...';
+    document.getElementById('platform').textContent = navigator.platform;
+    document.getElementById('screen').textContent = `${screen.width}×${screen.height}`;
+    document.getElementById('dpr').textContent = window.devicePixelRatio;
+    document.getElementById('touch').textContent = navigator.maxTouchPoints;
+
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    document.getElementById('connection').textContent = conn ?
+      `${conn.effectiveType || conn.type} (${conn.downlink || '?'} Mbps)` : 'Unknown';
+  </script>
+</body>
+</html>
