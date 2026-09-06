@@ -35,3 +35,7 @@ Thumbs.db
 # Temporary
 tmp/
 temp/
+
+# Perfiles de Chrome de la automatización de navegador (contienen Login Data,
+# Cookies, History reales — nunca deben trackearse, ver incidente 2026-09-06)
+.automation-temp/
